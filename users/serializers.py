@@ -47,3 +47,11 @@ class DoctorProfileSerializer(serializers.ModelSerializer):
         model = DoctorProfile
         fields = ['id', 'user', 'user_name', 'specialty', 'bio', 'availability']
         read_only_fields = ['user']
+
+class DoctorProfileSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = DoctorProfile
+        fields = ['id', 'user', 'specialty', 'bio', 'availability']
+

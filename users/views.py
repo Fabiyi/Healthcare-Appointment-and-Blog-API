@@ -8,6 +8,8 @@ from rest_framework.permissions import IsAuthenticated
 from .models import DoctorProfile
 from .serializers import DoctorProfileSerializer
 
+from rest_framework import generics, permissions
+
 
 User = get_user_model()
 
@@ -64,4 +66,34 @@ class DoctorListView(generics.ListAPIView):
             queryset = queryset.filter(specialty__icontains=specialty)
         if name:
             queryset = queryset.filter(user__first_name__icontains=name)
+        return queryset
+# Create View and Update ( Doctor  Mnanagementt)
+
+class DoctorProfileCreateUpdateView(generics.CreateAPIView, generics.UpdateAPIView):
+    queryset = DoctorProfile.objects.all()
+    serializer_class = DoctorProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class DoctorProfileListView(generics.ListAPIView):
+    queryset = DoctorProfile.objects.all()
+    serializer_class = DoctorProfileSerializer
+    permission_classes = [permissions.AllowAny]
+
+
+class DoctorProfileSearchView(generics.ListAPIView):
+    serializer_class = DoctorProfileSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        queryset = DoctorProfile.objects.all()
+        specialty = self.request.query_params.get('specialty')
+        name = self.request.query_params.get('name')
+        if specialty:
+            queryset = queryset.filter(specialty__icontains=specialty)
+        if name:
+            queryset = queryset.filter(user__first_name__icontains=name) | queryset.filter(user__last_name__icontains=name)
         return queryset

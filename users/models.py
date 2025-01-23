@@ -17,8 +17,8 @@ class CustomUser(AbstractUser):
 class DoctorProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="doctor_profile")
     specialty = models.CharField(max_length=255)
-    bio = models.TextField(blank=True, null=True)
-    availability = models.BooleanField(default=True)
+    bio = models.TextField(blank=True,)
+    availability = models.CharField(max_length=100)
 
     def __str__(self):
-        return f"{self.user.first_name} - {self.specialty}"
+        return f"{self.user.first_name} {self.user.last_name} - {self.specialty}"
