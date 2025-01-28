@@ -13,6 +13,8 @@ from rest_framework import generics, permissions
 
 User = get_user_model()
 
+# a. User Authentication Endpoints (doctor or patient)
+
 # User Registration View
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
@@ -27,9 +29,40 @@ class RegisterView(generics.CreateAPIView):
         }, status=status.HTTP_201_CREATED)
 
 
+# 1.1. Register a User
+# URL: /register/
+# Method: POST
+# Description: Register a new user as either a patient or doctor.
+
+# ............Request Body Example:
+
+# {
+#   "email": "doctor1@example.com",
+#   "password": "securepassword",
+#   "first_name": "John",
+#   "last_name": "Doe",
+#   "role": "doctor"
+# }
+
+# ............Response Example:
+# {
+#   "id": 1,
+#   "email": "doctor1@example.com",
+#   "first_name": "John",
+#   "last_name": "Doe",
+#   "role": "doctor"
+# }
+
+
+
+
+
+
+# ...... Login a User ......(URL: /login/ ) ......(Method: POST).... (Description: Authenticate a user and get a JSON Web Token (JWT).)
 # User Login View
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -40,8 +73,22 @@ class LoginView(generics.GenericAPIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }, status=status.HTTP_200_OK)
+    
+### ......... Request Body Example
+
+# {
+#   "email": "doctor1@example.com",
+#   "password": "securepassword"
+# }
+
+### .......... Response Example
+# {
+#   "access": "jwt_access_token",
+#   "refresh": "jwt_refresh_token"
+# }
 
 
+#........................................ Doctor Management Endpoints
 # Doctor Profile Management View
 class DoctorProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = DoctorProfileSerializer
@@ -67,7 +114,32 @@ class DoctorListView(generics.ListAPIView):
         if name:
             queryset = queryset.filter(user__first_name__icontains=name)
         return queryset
-# Create View and Update ( Doctor  Mnanagementt)
+# Create View and Update ( Doctor  Mnanagement)
+
+# Create/Update a Doctor Profile
+# URL: /doctors/
+# Method: POST (if creating) or PATCH (if updating)
+# Role Required: Doctor
+# Description: Create or update a doctor’s profile.
+
+
+##   (Request):
+
+# {
+#   "specialty": "Cardiology",
+#   "bio": "Experienced cardiologist with 10+ years of expertise.",
+#   "availability": "Monday to Friday, 9 AM to 5 PM"
+# }
+##   (Response):
+
+# {
+#   "id": 1,
+#   "user": "doctor1@example.com",
+#   "specialty": "Cardiology",
+#   "bio": "Experienced cardiologist with 10+ years of expertise.",
+#   "availability": "Monday to Friday, 9 AM to 5 PM"
+# }
+
 
 class DoctorProfileCreateUpdateView(generics.CreateAPIView, generics.UpdateAPIView):
     queryset = DoctorProfile.objects.all()
@@ -76,6 +148,27 @@ class DoctorProfileCreateUpdateView(generics.CreateAPIView, generics.UpdateAPIVi
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+### Retrieve a List of Doctors
+# (URL: /doctors/ ) ......   (Method: GET)  ......   (Description: Retrieve a list of all doctors.)
+                                # ........Response:
+
+# [
+#   {
+#     "id": 1,
+#     "name": "Dr. John Doe",
+#     "specialty": "Cardiology",
+#     "bio": "Experienced cardiologist with 10+ years of expertise.",
+#     "availability": "Monday to Friday, 9 AM to 5 PM"
+#   },
+#   {
+#     "id": 2,
+#     "name": "Dr. Jane Smith",
+#     "specialty": "Neurology",
+#     "bio": "Specialist in neurological disorders.",
+#     "availability": "Monday to Thursday, 10 AM to 4 PM"
+#   }
+# ]
+
 
 
 class DoctorProfileListView(generics.ListAPIView):
@@ -83,6 +176,21 @@ class DoctorProfileListView(generics.ListAPIView):
     serializer_class = DoctorProfileSerializer
     permission_classes = [permissions.AllowAny]
 
+### Search for Doctors
+# (URL: /doctors/search/)  ........    (Method: GET) ...... (Description: Search for doctors by name or specialty.)
+                           # (Query Parameters Example: /doctors/search/?specialty=Cardiology)
+
+
+# ...........Response
+# [
+#   {
+#     "id": 1,
+#     "name": "Dr. John Doe",
+#     "specialty": "Cardiology",
+#     "bio": "Experienced cardiologist with 10+ years of expertise.",
+#     "availability": "Monday to Friday, 9 AM to 5 PM"
+#   }
+# ]
 
 class DoctorProfileSearchView(generics.ListAPIView):
     serializer_class = DoctorProfileSerializer

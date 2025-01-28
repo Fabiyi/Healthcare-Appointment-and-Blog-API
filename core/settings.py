@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -75,11 +77,29 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 
 REST_FRAMEWORK = {
+    # Use Django's `stardard django.contrib.auth` permission,
+    # or allow read-only access for unauthenticated users,
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
 }
+# SIMPLE_JWT = {
+#     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+#     'ALGORITHM': 'HD256',
+#     'SIGHING KEY': SECRET_KEY,
+#     'AUTH_HEADER_TYPES':('bearer',),
+# }
 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
@@ -127,6 +147,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -134,4 +155,130 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.CustomUser'
+
+
+# Django is like a toolkit that helps you build websites. 
+##1 ...... Start by creating a new project to organize your work 
+
+# (like opening a blank notebook for a class).
+
+## A....... Create the project i.e CORE django-admin startproject core
+
+
+## In Django, Create  APPS python manage.py startapp are like mini-projects with specific tasks. For example:users,blogs and appointments
+
+## B....... Set up a database (SQLite by default) and other tools in the settings.py file.
+
+
+## C........ Install (DEPENDENCIES) extra tools like Django REST Framework (DRF) for APIs and JWT for secure login.
+
+## D........ (GitHub) is like a safe locker for your project. Push your code to keep it safe and share it with others.
+
+## 2...(USER AUTHENTICATION): This step makes sure users can log in securely and 
+# defines who they are (either patients or doctors).
+
+
+## A..... Create (CUSTOM USER MODEL) a user model that adds roles (like "patient" or "doctor") 
+## to distinguish between users.
+# (PATIENT): Can book appointments.
+# (DOCTOR): Can manage appointments and create blogs.
+## 
+
+
+# B...... JWT Authentication:
+# JWT (JSON Web Token) is like a digital badge. When a user logs in, they get a token that proves their identity.
+# Example:
+# Patient logs in and gets a token.
+# This token is used for every API request to verify who they are.
+
+# C....... Endpoints:
+
+# These are the URLs where the app listens for user actions:
+# /register/: Create a new account.
+# /login/: Log in and get a token.
+
+# 3...... Doctor Management
+# Doctors are a special type of user who need extra information 
+# (like their specialty and availability).
+
+# A.    Doctor Profile: Each doctor has a profile with fields like:
+ 
+# Name
+# Specialty (e.g., cardiology, neurology)
+# Availability (e.g., Monday to Friday)
+
+# B....... Endpoints:
+
+# Create/Update Profile: Doctors can set up their profile with /doctors/.
+# Search Doctors: Patients can search for doctors by specialty or name using /doctors/search/.
+
+## 4. Appointment Management
+# This is the core functionality for connecting patients and doctors.
+
+# A.........Appointment Model:
+
+# Think of this as a form where patients provide:
+# Doctor: Who they want to book.
+# Date and Time: When they need the appointment.
+# Reason: Why they’re booking the appointment.
+
+# B.........Status Management:
+
+# When a patient books, the appointment starts as "pending."
+# The doctor can:
+# Accept it (status = "accepted").
+# Decline it (status = "declined").
+
+# C.......... Endpoints:
+
+# /appointments/: Patients create appointments here.
+# /appointments/<id>/: Doctors can update the status of an appointment (accept/decline).
+
+## 5. Blog Management
+# Doctors can share their knowledge with everyone through blogs.
+
+# A......... Blog Model:
+# Each blog has fields like:
+# Title
+# Content
+# Author (linked to the doctor who wrote it)
+
+## B.........Access Control:
+# Doctors: Can create, edit, and delete blogs.
+# Patients: Can only read blogs.
+
+## C...... Endpoints:
+# Create Blog: /blogs/
+# View All Blogs: /blogs/
+# View Single Blog: /blogs/<id>/
+# Edit Blog: /blogs/<id>/
+# Delete Blog: /blogs/<id>/
+
+##  6. Testing and Documentation
+# This step ensures everything works as expected and provides instructions for using the API.
+
+# A........Testing:
+# Write automated tests to check if the code works correctly.
+# Example:
+# Does /register/ actually create a new user?
+# Can a doctor accept an appointment?
+
+# B......... Performance Optimization:
+# Make sure the app runs smoothly and handles large amounts of data.
+
+# C ..........Documentation:
+# Write a README.md file explaining how to:
+# Set up the project.
+# Use the API endpoints.
+
+
+#### How It All Fits Together
+# Here’s how each step connects:
+
+# Patients and doctors log in to the system.
+# Doctors set up their profiles.
+# Patients search for doctors and book appointments.
+# Doctors manage appointments.
+# Doctors create blogs to share knowledge.
+# The system ensures everyone’s actions are secure and role-appropriate.
 
