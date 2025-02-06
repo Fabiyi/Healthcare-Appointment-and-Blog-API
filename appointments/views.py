@@ -1,6 +1,5 @@
 from rest_framework import generics, permissions
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.exceptions import PermissionDenied
 from .models import Appointment
 from .serializers import AppointmentSerializer
 
@@ -8,15 +7,20 @@ from .serializers import AppointmentSerializer
 # Create your views here.
 
 
+# Create Appointment (Patients Only)
 class AppointmentCreateView(generics.CreateAPIView):
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
+        if self.request.user.role != 'patient':
+            raise PermissionDenied("Only patients can book appointments.")
         serializer.save(patient=self.request.user)
-# Create an Appointment
 
-# (URL: /appointments/ ) ........   (Method: POST) ........   ( Role Required: Patient)
+# Create an Appointment (PATIENT ONLY & VIEW THIER APPOINTMENT)
+
+# (URL: /appointments/ ) 
+# ........   (Method: POST) ........   ( Role Required: Patient)
 
 # (Request):
 
@@ -31,24 +35,24 @@ class AppointmentCreateView(generics.CreateAPIView):
 # }
 
 
-class AppointmentListView(APIView):
+# List Appointments (Doctors or Patients)
+class AppointmentListView(generics.ListAPIView):
+    serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
-        user = request.user
-        if user.role == 'patient':
-            appointments = Appointment.objects.filter(patient=user)
-        elif user.role == 'doctor':
-            appointments = Appointment.objects.filter(doctor=user)
-        else:
-            return Response({"detail": "Invalid user role."}, status=403)
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'doctor':
+            return Appointment.objects.filter(doctor=user)
+        elif user.role == 'patient':
+            return Appointment.objects.filter(patient=user)
+        raise PermissionDenied("Invalid role.")
 
-        serializer = AppointmentSerializer(appointments, many=True)
-        return Response(serializer.data)
 
-# ...................View Appointments
-# (URL: /appointments/) ...........      ( Method: GET)  
-#        (Description: View all appointments for the logged-in user (doctor or patient).)
+# ...................View Appointments(DOCTOR ONLY SEE APPOINTMENT ASSIGNED TO THEM)
+# (URL: /appointments/list/) ...........      
+# ( Method: GET)  
+#        (Description: View all appointments for the logged-in user (doctor "PATCH" or patient "GET").)
 
 # (Response):
 # [
@@ -65,19 +69,22 @@ class AppointmentListView(APIView):
 
 
 
+# Update Appointment Status (Doctors Only)
 class AppointmentUpdateView(generics.UpdateAPIView):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def partial_update(self, request, *args, **kwargs):
+    def perform_update(self, serializer):
         appointment = self.get_object()
-        if request.user != appointment.doctor:
-            return Response({"detail": "Only the doctor can update this appointment."}, status=403)
-        return super().partial_update(request, *args, **kwargs)
+        if self.request.user != appointment.doctor:
+            raise PermissionDenied("Only the assigned doctor can update the appointment.")
+        serializer.save()
 
-#.......................................... Update Appointment Status
-# (URL: /appointments/<id>/) ..................  (Method: PATCH) ............(Role Required: Doctor)
+
+#................................... Update Appointment Status (DOCTOR UPDATE THE APPOINTMENT STATUS)
+# (URL: /appointments/<id>/) ..................  
+# (Method: PATCH) ............(Role Required: Doctor)
 
 # (Request):
 # {

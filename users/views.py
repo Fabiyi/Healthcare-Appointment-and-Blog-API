@@ -17,20 +17,23 @@ User = get_user_model()
 
 # User Registration View
 class RegisterView(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
     serializer_class = UserSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        return Response({
-            "user": UserSerializer(user).data,
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response({
             "message": "User registered successfully."
-        }, status=status.HTTP_201_CREATED)
-
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+    
 
 # 1.1. Register a User
-# URL: /register/
+# URL: auth/register/
 # Method: POST
 # Description: Register a new user as either a patient or doctor.
 
@@ -58,7 +61,7 @@ class RegisterView(generics.CreateAPIView):
 
 
 
-# ...... Login a User ......(URL: /login/ ) ......(Method: POST).... (Description: Authenticate a user and get a JSON Web Token (JWT).)
+# ...... Login a User ......(URL: users/login/ ) ......(Method: POST).... (Description: Authenticate a user and get a JSON Web Token (JWT).)
 # User Login View
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
@@ -73,6 +76,8 @@ class LoginView(generics.GenericAPIView):
             "refresh": str(refresh),
             "access": str(refresh.access_token),
         }, status=status.HTTP_200_OK)
+    
+    
     
 ### ......... Request Body Example
 
@@ -99,7 +104,8 @@ class DoctorProfileView(generics.RetrieveUpdateAPIView):
         if user.role != 'doctor':
             raise PermissionError("Only doctors can access this.")
         return DoctorProfile.objects.get_or_create(user=user)[0]
-
+    
+    
 # List and Search Doctors
 class DoctorListView(generics.ListAPIView):
     queryset = DoctorProfile.objects.all()
@@ -114,10 +120,12 @@ class DoctorListView(generics.ListAPIView):
         if name:
             queryset = queryset.filter(user__first_name__icontains=name)
         return queryset
+    
+    
 # Create View and Update ( Doctor  Mnanagement)
 
 # Create/Update a Doctor Profile
-# URL: /doctors/
+# URL: users/doctors/
 # Method: POST (if creating) or PATCH (if updating)
 # Role Required: Doctor
 # Description: Create or update a doctor’s profile.
@@ -148,8 +156,10 @@ class DoctorProfileCreateUpdateView(generics.CreateAPIView, generics.UpdateAPIVi
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+    
+    
 ### Retrieve a List of Doctors
-# (URL: /doctors/ ) ......   (Method: GET)  ......   (Description: Retrieve a list of all doctors.)
+# (URL: users/doctors/ ) ......   (Method: GET)  ......   (Description: Retrieve a list of all doctors.)
                                 # ........Response:
 
 # [
@@ -177,7 +187,7 @@ class DoctorProfileListView(generics.ListAPIView):
     permission_classes = [permissions.AllowAny]
 
 ### Search for Doctors
-# (URL: /doctors/search/)  ........    (Method: GET) ...... (Description: Search for doctors by name or specialty.)
+# (URL: users/doctors/search/)  ........    (Method: GET) ...... (Description: Search for doctors by name or specialty.)
                            # (Query Parameters Example: /doctors/search/?specialty=Cardiology)
 
 
@@ -205,3 +215,5 @@ class DoctorProfileSearchView(generics.ListAPIView):
         if name:
             queryset = queryset.filter(user__first_name__icontains=name) | queryset.filter(user__last_name__icontains=name)
         return queryset
+    
+   

@@ -12,10 +12,12 @@ class Appointment(models.Model):
     ]
 
     patient = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appointments_as_patient'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appointments_as_patient',null=True,  # Allow null
+    blank=True  # Allow forms to leave it empty
     )
     doctor = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appointments_as_doctor'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='appointments_as_doctor',null=True,  # Allow null
+    blank=True  # Allow forms to leave it empty
     )
     date = models.DateField()
     time = models.TimeField()

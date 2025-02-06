@@ -21,7 +21,8 @@ class BlogDetailView(generics.RetrieveAPIView):
     serializer_class = BlogSerializer
     permission_classes = [permissions.AllowAny]
 # .............................View All Blogs
-# (URL: /blogs/) .................... (Method: GET) .................(Description: Retrieve all blogs.)
+# (URL: /blogs/) 
+# .................... (Method: GET) .................(Description: Retrieve all the list blogs.)
 # (Response):
 # [
 #   {
@@ -47,7 +48,8 @@ class BlogCreateView(generics.CreateAPIView):
         serializer.save(author=self.request.user)
 # .....................Create a Blog
 
-# (URL: /blogs/)......................(Method: POST)..................(Role Required: Doctor)
+# (URL: /blogs/)
+# ......................(Method: POST)..................(Role Required: Doctor)
 # (Request):
 # {
 #   "title": "The Importance of Regular Check-Ups",
@@ -77,7 +79,8 @@ class BlogUpdateView(generics.UpdateAPIView):
             raise PermissionError("You can only update your own blogs.")
         serializer.save()
 # ........................................Edit a Blog
-# (URL: /blogs/<id>/)   ................(Method: PATCH) ...........(Role Required: Doctor (Author Only))
+# (URL: /blogs/<id>/)   
+# ................(Method: PATCH) ...........(Role Required: Doctor (Author Only))
 # (Request):
 # {
 #   "content": "Updated content about regular check-ups."

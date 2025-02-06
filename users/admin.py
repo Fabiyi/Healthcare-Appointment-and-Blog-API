@@ -10,4 +10,4 @@ class CustomUserAdmin(admin.ModelAdmin):
     search_fields = ('first_name','email')
 
 admin.site.register(CustomUser, CustomUserAdmin)
-admin.site.unregister(Group)
+admin.site.unregister(Group)  
