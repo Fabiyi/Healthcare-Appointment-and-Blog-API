@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions
+from rest_framework.exceptions import PermissionDenied
 from .models import Blog
 from .serializers import BlogSerializer
 
@@ -44,7 +45,7 @@ class BlogCreateView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         if self.request.user.role != 'doctor':
-            raise PermissionError("Only doctors can create blogs.")
+            raise PermissionDenied("Only doctors can create blogs.")
         serializer.save(author=self.request.user)
 # .....................Create a Blog
 

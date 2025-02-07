@@ -1,5 +1,6 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from .serializers import UserSerializer, LoginSerializer
@@ -149,13 +150,28 @@ class DoctorListView(generics.ListAPIView):
 # }
 
 
+
+
 class DoctorProfileCreateUpdateView(generics.CreateAPIView, generics.UpdateAPIView):
     queryset = DoctorProfile.objects.all()
     serializer_class = DoctorProfileSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def perform_create(self, serializer):
+        # Check if the logged-in user is a doctor
+        if self.request.user.role != 'doctor':
+            raise PermissionDenied("Only doctors can create or update a profile.")
+        
+        # Save the doctor profile linked to the logged-in user
         serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        # Check if the logged-in user is a doctor
+        if self.request.user.role != 'doctor':
+            raise PermissionDenied("Only doctors can create or update a profile.")
+        
+        # Update the doctor profile
+        serializer.save()
     
     
 ### Retrieve a List of Doctors
