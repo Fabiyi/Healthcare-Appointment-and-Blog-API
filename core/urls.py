@@ -22,6 +22,6 @@ urlpatterns = [
     path('auth/', include('users.urls')),  # Authentication routes
     path('users/', include('users.urls')),  # Doctor management routes
     path('blogs/', include('blogs.urls')), # Blog management routes
-    path('appointments/', include('appointments.urls')), # Appointment routes
+    path('', include('appointments.urls')), # Appointment routes
 
 ]

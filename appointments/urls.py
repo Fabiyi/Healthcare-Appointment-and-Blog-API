@@ -1,11 +1,10 @@
-from django.urls import path, include
-from .views import AppointmentCreateView, AppointmentListView, AppointmentUpdateView
+from django.urls import path
+from .views import AppointmentListCreateAPIView, AppointmentUpdateAPIView, AppointmentCancelAPIView
 
 urlpatterns = [
-    path('', AppointmentCreateView.as_view(), name='appointment-create'),
-    path('list/', AppointmentListView.as_view(), name='appointment-list'),
-    path('<int:pk>/', AppointmentUpdateView.as_view(), name='appointment-update'),
-    # path('appointments/', include('appointments.urls')),
+    path('appointments/', AppointmentListCreateAPIView.as_view(), name='appointments-list-create'),
+    path('appointments/<int:pk>/', AppointmentUpdateAPIView.as_view(), name='appointments-update'),
+    path('appointments/<int:pk>/cancel/', AppointmentCancelAPIView.as_view(), name='appointments-cancel'),
 ]
 
 

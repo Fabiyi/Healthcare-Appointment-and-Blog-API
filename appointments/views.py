@@ -1,106 +1,164 @@
 from rest_framework import generics, permissions
+from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
 from .models import Appointment
 from .serializers import AppointmentSerializer
 
 
-# Create your views here.
 
 
-# Create Appointment (Patients Only)
-class AppointmentCreateView(generics.CreateAPIView):
-    serializer_class = AppointmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def perform_create(self, serializer):
-        if self.request.user.role != 'patient':
-            raise PermissionDenied("Only patients can book appointments.")
-        serializer.save(patient=self.request.user)
-
-# Create an Appointment (PATIENT ONLY & VIEW THIER APPOINTMENT)
-
-# (URL: /appointments/ ) 
-# ........   (Method: POST) ........   ( Role Required: Patient)
-
-# (Request):
-
-# {
-#   "id": 1,
-#   "patient": "patient1@example.com",
-#   "doctor": "Dr. John Doe",
-#   "date": "2025-02-01",
-#   "time": "14:00",
-#   "status": "pending",
-#   "reason": "Routine check-up"
-# }
-
-
-# List Appointments (Doctors or Patients)
-class AppointmentListView(generics.ListAPIView):
+class AppointmentListCreateAPIView(generics.ListCreateAPIView):
+    """Allows patients to create appointments and doctors/patients to view them"""
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
+        """Patients see their appointments, doctors see assigned appointments"""
         user = self.request.user
-        if user.role == 'doctor':
-            return Appointment.objects.filter(doctor=user)
-        elif user.role == 'patient':
+        if user.role == 'patient':
             return Appointment.objects.filter(patient=user)
-        raise PermissionDenied("Invalid role.")
+        elif user.role == 'doctor':
+            return Appointment.objects.filter(doctor=user)
+        return Appointment.objects.none()
+
+    def perform_create(self, serializer):
+        """Ensure that only patients can book appointments"""
+        if self.request.user.role != 'patient':
+            raise PermissionDenied("Only patients can create appointments.")
+        serializer.save(patient=self.request.user)
+
+#         A. Book an Appointment (Patients Only)
+
+# URL: POST http://127.0.0.1:8000/appointments/
+
+# Headers:
+
+# Authorization: Bearer <JWT_ACCESS_TOKEN>
+
+# Body (JSON):
+
+# {
+#   "doctor": 2,
+#   "date": "2025-03-10",
+#   "time": "15:00",
+#   "reason": "Routine checkup"
+# }
+
+# ✅ Success Response (201 Created):
+
+# {
+#   "id": 1,
+#   "patient_email": "patient@example.com",
+#   "doctor_name": "Dr. John Doe",
+#   "doctor": 2,
+#   "date": "2025-03-10",
+#   "time": "15:00",
+#   "reason": "Routine checkup",
+#   "status": "pending"
+# }
 
 
-# ...................View Appointments(DOCTOR ONLY SEE APPOINTMENT ASSIGNED TO THEM)
-# (URL: /appointments/list/) ...........      
-# ( Method: GET)  
-#        (Description: View all appointments for the logged-in user (doctor "PATCH" or patient "GET").)
-
-# (Response):
-# [
-#   {
-#     "id": 1,
-#     "patient": "patient1@example.com",
-#     "date": "2025-02-01",
-#     "time": "14:00",
-#     "status": "pending",
-#     "reason": "Routine check-up"
-#   }
-# ]
-
-
-
-
-# Update Appointment Status (Doctors Only)
-class AppointmentUpdateView(generics.UpdateAPIView):
+class AppointmentUpdateAPIView(generics.UpdateAPIView):
+    """Allows doctors to update appointment status"""
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
 
-    def perform_update(self, serializer):
+    def patch(self, request, *args, **kwargs):
+        """Doctors can accept/decline appointments"""
         appointment = self.get_object()
-        if self.request.user != appointment.doctor:
-            raise PermissionDenied("Only the assigned doctor can update the appointment.")
-        serializer.save()
 
+        if request.user.role != 'doctor':
+            raise PermissionDenied("Only doctors can update appointment status.")
 
-#................................... Update Appointment Status (DOCTOR UPDATE THE APPOINTMENT STATUS)
-# (URL: /appointments/<id>/) ..................  
-# (Method: PATCH) ............(Role Required: Doctor)
+        new_status = request.data.get('status')
+        if new_status not in ['accepted', 'declined']:
+            return Response({"error": "Invalid status update"}, status=400)
 
-# (Request):
+        appointment.status = new_status
+        appointment.save()
+        return Response({"id": appointment.id, "status": appointment.status})
+    
+# B. View Appointments (Patients & Doctors)
+
+# URL: GET http://127.0.0.1:8000/api/appointments/
+
+# ✅ Success Response (200 OK):
+
+# [
+#   {
+#     "id": 1,
+#     "patient_email": "patient@example.com",
+#     "doctor_name": "Dr. John Doe",
+#     "doctor": 2,
+#     "date": "2025-03-10",
+#     "time": "15:00",
+#     "reason": "Routine checkup",
+#     "status": "pending"
+#   }
+# ]
+
+# C. Update Appointment Status (Doctors Only)
+
+# URL: PATCH http://127.0.0.1:8000/api/appointments/1/
+
+# Headers:
+
+# Authorization: Bearer <JWT_ACCESS_TOKEN>
+
+# Body (JSON):
+
 # {
 #   "status": "accepted"
 # }
 
-#(Response):
+# ✅ Success Response (200 OK):
+
 # {
 #   "id": 1,
-#   "patient": "patient1@example.com",
-#   "doctor": "Dr. John Doe",
-#   "date": "2025-02-01",
-#   "time": "14:00",
-#   "status": "accepted",
-#   "reason": "Routine check-up"
+#   "status": "accepted"
 # }
 
+
+
+class AppointmentCancelAPIView(generics.UpdateAPIView):
+    """Allows patients or doctors to cancel appointments"""
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        """Handle appointment cancellation"""
+        appointment = self.get_object()
+        user = request.user
+
+        if user.role == 'patient' and appointment.patient != user:
+            raise PermissionDenied("You can only cancel your own appointments.")
+        if appointment.status in ['accepted', 'declined', 'canceled']:
+            return Response({"error": "This appointment cannot be canceled."}, status=400)
+
+        appointment.status = 'canceled'
+        appointment.save()
+        return Response({"id": appointment.id, "status": appointment.status})
+
+
+# A. Cancel an Appointment (Patients or Doctors)
+
+# URL: PATCH http://127.0.0.1:8000/api/appointments/1/cancel/
+
+# Headers:
+
+# Authorization: Bearer <JWT_ACCESS_TOKEN>
+
+# ✅ Success Response (200 OK):
+
+# {
+#   "id": 1,
+#   "status": "canceled"
+# }
+
+# ❌ Error Responses:
+
+# If trying to cancel someone else's appointment (for patients).
 
 
