@@ -27,35 +27,7 @@ class AppointmentListCreateAPIView(generics.ListCreateAPIView):
             raise PermissionDenied("Only patients can create appointments.")
         serializer.save(patient=self.request.user)
 
-#         A. Book an Appointment (Patients Only)
 
-# URL: POST http://127.0.0.1:8000/appointments/
-
-# Headers:
-
-# Authorization: Bearer <JWT_ACCESS_TOKEN>
-
-# Body (JSON):
-
-# {
-#   "doctor": 2,
-#   "date": "2025-03-10",
-#   "time": "15:00",
-#   "reason": "Routine checkup"
-# }
-
-# ✅ Success Response (201 Created):
-
-# {
-#   "id": 1,
-#   "patient_email": "patient@example.com",
-#   "doctor_name": "Dr. John Doe",
-#   "doctor": 2,
-#   "date": "2025-03-10",
-#   "time": "15:00",
-#   "reason": "Routine checkup",
-#   "status": "pending"
-# }
 
 
 class AppointmentUpdateAPIView(generics.UpdateAPIView):
@@ -79,45 +51,7 @@ class AppointmentUpdateAPIView(generics.UpdateAPIView):
         appointment.save()
         return Response({"id": appointment.id, "status": appointment.status})
     
-# B. View Appointments (Patients & Doctors)
 
-# URL: GET http://127.0.0.1:8000/api/appointments/
-
-# ✅ Success Response (200 OK):
-
-# [
-#   {
-#     "id": 1,
-#     "patient_email": "patient@example.com",
-#     "doctor_name": "Dr. John Doe",
-#     "doctor": 2,
-#     "date": "2025-03-10",
-#     "time": "15:00",
-#     "reason": "Routine checkup",
-#     "status": "pending"
-#   }
-# ]
-
-# C. Update Appointment Status (Doctors Only)
-
-# URL: PATCH http://127.0.0.1:8000/api/appointments/1/
-
-# Headers:
-
-# Authorization: Bearer <JWT_ACCESS_TOKEN>
-
-# Body (JSON):
-
-# {
-#   "status": "accepted"
-# }
-
-# ✅ Success Response (200 OK):
-
-# {
-#   "id": 1,
-#   "status": "accepted"
-# }
 
 
 
@@ -142,23 +76,6 @@ class AppointmentCancelAPIView(generics.UpdateAPIView):
         return Response({"id": appointment.id, "status": appointment.status})
 
 
-# A. Cancel an Appointment (Patients or Doctors)
 
-# URL: PATCH http://127.0.0.1:8000/api/appointments/1/cancel/
-
-# Headers:
-
-# Authorization: Bearer <JWT_ACCESS_TOKEN>
-
-# ✅ Success Response (200 OK):
-
-# {
-#   "id": 1,
-#   "status": "canceled"
-# }
-
-# ❌ Error Responses:
-
-# If trying to cancel someone else's appointment (for patients).
 
 
